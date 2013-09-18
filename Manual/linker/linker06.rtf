@@ -1,0 +1,264 @@
+{\rtf1\ansi 
+\deff4\deflang1033
+{\fonttbl{\f1\froman\fcharset2\fprq2 Symbol;}
+{\f4\froman\fcharset0\fprq2 Times New Roman;}
+{\f5\fswiss\fcharset0\fprq2 Arial;}
+{\f11\fmodern\fcharset0\fprq1 Courier New;}}
+{\colortbl;\red0\green0\blue0;\red0\green0\blue255;\red0\green255\blue255;
+\red0\green255\blue0;\red255\green0\blue255;\red255\green0\blue0;
+\red255\green255\blue0;\red255\green255\blue255;\red0\green0\blue128;
+\red0\green128\blue128;\red0\green128\blue0;
+\red128\green0\blue128;\red128\green0\blue0;\red128\green128\blue0;
+\red128\green128\blue128;\red192\green192\blue192;}
+{\stylesheet
+{\widctlpar \f4\fs24 \snext0 Normal;}{\s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 \sbasedon0\snext0 heading 1;}
+{\s2\sb240\sa60\keepn\widctlpar \b\i\f5 \sbasedon0\snext0 heading 2;}
+{\s3\sb240\sa60\keepn\widctlpar \f5 \sbasedon0\snext0 heading 3;}
+{\*\cs10 \additive Default Paragraph Font;}
+{\s15\widctlpar\brdrb\brdrs\brdrw15\brsp20 \tqc\tx4320\tqr\tx8640 \f4\fs24 
+\sbasedon0\snext15 header;}
+{\s16\fi-360\li360\widctlpar{\*\pn \pnlvl11\pnf1\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\f4\fs24 \sbasedon0\snext16 List Bullet;}
+{\s17\widctlpar \f11\fs24 \sbasedon0\snext17 Code;}
+{\s18\widctlpar\box\brdrsh\brdrs\brdrw15\brsp20 \f4\fs24 \sbasedon0\snext18 Figure;}
+{\s19\widctlpar\tqc\tx4320\tqr\tx8640 \f4\fs24 \sbasedon0\snext19 footer;}
+{\*\cs20 \additive\sbasedon10 page number;}}
+{\info{\title Linkers and loader chapter}
+{\author John R. Levine}
+{\operator John R. Levine}
+{\*\company I.E.C.C.}{\vern57431}}
+\widowctrl\ftnbj\aenddoc\formshade \fet0\sectd \linex0\endnhere 
+
+{\header \pard\plain \s15\widctlpar\brdrb\brdrs\brdrw15\brsp20 \tqc\tx4320\tqr\tx8640 \f4\fs24
+{\i Libraries\tab \tab }{\field{\*\fldinst {\cs20  PAGE }}
+{\fldrslt {\cs20\lang1024 1}}}}
+\pard\plain \s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 Chapter XX: Libraries
+\par\pard\plain
+Every modern linker handles libraries, collections of object files that are included as needed in a linked program. In this chapter we cover traditional statically linked libraries, leaving the more complex shared libraries to Chapters 9 and 10. {\fs24 
+\par }
+\pard\plain \s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 Purpose of libraries
+\par \pard\plain
+In the 1940s and early 1950s, programming shops had actual code libraries containing reels of tape or later decks of cards that a programmer would visit and select routines to load with his program. Once loaders and linkers started to resolve symbolic references, it became possible to automate the process by selecting routines from the library that resolve otherwise undefined symbols. {\fs24 
+\par }
+\par\pard\plain
+A library file is fundamentally no more than a collection of object files, usually with some added directory information to make it faster to search. As always, the details are more complicated than the basic idea, so we work them out in this chapter. We use the term file to refer to a separate object file, and module to refer to an object file included in a library. {\fs24 
+\par }
+\pard\plain \s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 Library formats
+\par \pard\plain
+The simplest library formats are just sequences of object modules. On sequential media like magnetic or paper tape, there's little point in adding a directory since the linker has to read through the whole library anyway, and skipping over library members is no slower than reading them in. On disks, though, a directory can speed up library searching considerably and is now a standard facility. {\fs24 
+\par }
+ \pard\plain \s2\sb240\sa60\keepn\widctlpar \b\i\f5 Using the operating system
+\par \pard\plain
+OS/360 and its descendants including MVS provide {\i partitioned data sets}(PDS), that contain named members, each of which can be treated as a sequential file. The system provides features for giving multiple aliases to a single member, for treating multiple PDS as a single logical PDS for the duration of a program, for enumerating the names in a logical PDS, and of course for reading or writing the members. Member names are eight characters which probably not coincidentally is the length of an external symbol in a linker. (MVS introduces an extended PDS or PDSE which has some support for names up to 1024 characters, for the benefit of C, C++, and Cobol programmers.) {\fs24 
+\par }
+\par\pard\plain
+A linker library is merely a PDS where each member is an object file named by its entry point. Object files that define multiple global symbols have an alias for each global symbol manually created when the library is built. The linker searches the logical PDS specified as the library for members whose names match undefined symbols. An advantage of this scheme is that there's no object library update program needed, since the standard file maintenance utilities for PDS suffice. {\fs24 
+\par }
+\par\pard\plain
+Although I've never seen a linker do so, a linker on a Unix-like system could handle libraries the same way; the library would be a directory, the members object files within the directory, with each file name being a global symbol defined in the file. (UNIX permits multiple names for a single file.) {\fs24 
+\par }
+ \pard\plain \s2\sb240\sa60\keepn\widctlpar \b\i\f5 Unix and Windows Archive files
+\par \pard\plain
+UNIX linker libraries use an ``archive'' format which can actually be used for collections of any types of files, although in practice it's rarely used for anything else. Libraries consist of an archive header, followed by alternating file headers and object files. The earliest archives had no symbol directories, just a set of object files, but later versions had various sorts of directories, settling down to one used for about a decade in BSD versions (text archive headers and a directory called {\f11 __.SYMDEF}) and the current version used with COFF or ELF libraries (text archive headers with an extension for long file names, directory called {\f11 /}) in System V.4, later versions of BSD, and Linux. Windows ECOFF libraries use the same archive format as  COFF libraries, but the directory, although also called {\f11 /}, has a different format. {\fs24 
+\par }
+\pard\plain \s3\sb240\sa60\keepn\widctlpar \f5 Unix archives
+\par 
+All modern Unix systems use minor variations of the same archive format, Figure 1. The format uses only text characters in the archive headers, which means that an archive of text files is itself a text file (a quality that has turned out in practice to be useless.) Each archive starts with the ``magic'' eight character string {\f11 !<arch>\\ n}, where {\f11 \\ n} is a new line. Each archive member is preceded by a 60 byte header containing: \par\pard\plain \s16\fi-360\li360\widctlpar
+{\*\pn \pnlvlblt\pnf1\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\f4\fs24
+The name of the member, padded to 16 characters as described below. \par\pard\plain \s16\fi-360\li360\widctlpar
+{\*\pn \pnlvlblt\pnf1\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\f4\fs24
+The modification date, as a decimal number of seconds since the beginning of 1970. \par\pard\plain \s16\fi-360\li360\widctlpar
+{\*\pn \pnlvlblt\pnf1\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\f4\fs24
+The user and group IDs as decimal numbers. \par\pard\plain \s16\fi-360\li360\widctlpar
+{\*\pn \pnlvlblt\pnf1\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\f4\fs24
+The UNIX file mode as an octal number. \par\pard\plain \s16\fi-360\li360\widctlpar
+{\*\pn \pnlvlblt\pnf1\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\f4\fs24
+The size of the file in bytes as a decimal number. If the file size is odd, the file's contents are padded with a newline character to make the total length even, although the pad character isn't counted in the size field. \par\pard\plain \s16\fi-360\li360\widctlpar
+{\*\pn \pnlvlblt\pnf1\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\f4\fs24
+The two characters reverse quote and newline, to make the header a line of text and provide a simple check that the header is indeed a header. Each member header contains the modification time, user and group IDs and file mode, although linkers ignore them. 
+\par\pard\plain \s18\widctlpar\box\brdrsh\brdrs\brdrw15\brsp20 \f4\fs24
+{\i Figure 1: Unix archive format \line}
+File header: \line{\f11 !<arch>\\ n} \lineMember header: \par\pard\plain \s17\widctlpar \f11\fs24
+\line
+char name[16];\tab /* member name */ \line
+char modtime[12];\tab /* modification time */ \line
+char uid[6];\tab /* user ID */ \line
+char gid[6];\tab /* group ID */ \line
+char mode[8];\tab /* octal file mode */ \line
+char size[10];\tab /* member size */ \line
+char eol[2];\tab /* reverese quote, newline */ {\fs24 
+\par }
+\par\pard\plain
+\par\pard\plain
+Member names that are 15 characters or less are followed by enough spaces to pad the name to 16 characters, or in COFF or ELF archives, a slash followed by enough spaces to pad the total to 16 characters. (Unix and Windows both use slashes to separate components in filenames.) The version of this archive format used with a.out files didn't support member names longer than 16 characters, reflecting pre-BSD Unix file system that limited file names to 14 characters per component. (Some BSD archives actually did have a provision for longer file names, but since linkers didn't handle the longer names correctly, nobody used them.) COFF, ELF and Windows archives store names longer than 16 characters in an archive member called {\f11 //}. This member contains the long names separated by a slash, newline pair on Unix or a null character on Windows. The name field of the header for member with a long name contains a slash followed by the decimal offset in the {\f11 //} member of the name string.  In Windows archives, the {\f11 //} member must be the third member of the archive. In Unix archives the member need not exist if there are no long names, but follows the symbol directory if it does. {\fs24 
+\par }
+\par\pard\plain
+Although the symbol directory formats have varied somewhat, they are all functionally the same, mapping names to member positions so linkers can directly move to and read the members they need to use. {\fs24 
+\par }
+\par\pard\plain
+The a.out archives store the directory in a member called {\f11 __.SYMDEF} which has to be the first member in the archive, Figure 2. The member starts with a word containing the size in bytes of the symbol table that follows it, so the number of entries in the table is 1/8 of the value in that word. Following the symbol table is a word containing the size of the string table, and the string table, each string followed by a null byte. Each symbol table entry contains a zero-based offset into the string table of the symbol's name, and the file position of the header of the member that defines the symbol. The symbols table entries are conventionally in the order of the members in the file. 
+\par\pard\plain \s18\widctlpar\box\brdrsh\brdrs\brdrw15\brsp20 \f4\fs24
+{\i Figure 2: SYMDEF directory format \line}
+\par\pard\plain \s17\widctlpar \f11\fs24
+\line
+int tablesize;\tab /* size in bytes of following table */ \line
+struct symtable \{ \line
+\tab int symbol;\tab /* offset in string table */ \line
+\tab int member;\tab /* member pointer */ \line
+\} symtable []; \line
+int stringsize;\tab \tab /* size of string table */ \line
+char strings[];\tab \tab /* null terminated strings */ {\fs24 
+\par }
+\par\pard\plain
+\par\pard\plain
+{\fs24 
+\par }
+\par\pard\plain
+COFF and ELF archives use the otherwise impossible name {\f11 /} for the symbol directory rather than {\f11 __.SYMDEF} and use a somewhat simpler format, Figure 3. The first four byte value is the number of symbols. Following that is an array of file offsets of archive members, and a set of null terminated strings. The first offset points to the member that defines the symbol named by the first string, and so forth. COFF archives usually use a big-endian byte order for the symbol table regardless of the native byte order of the architecture. 
+\par\pard\plain \s18\widctlpar\box\brdrsh\brdrs\brdrw15\brsp20 \f4\fs24
+{\i Figure 3: COFF / ELF directory format \line}
+\par\pard\plain \s17\widctlpar \f11\fs24
+\line
+int nsymbols;\tab /* number of symbols */ \line
+int member[];\tab /* member offsets */ \line
+char strings[];\tab /* null terminated strings */ {\fs24 
+\par }
+\par\pard\plain
+\par\pard\plain
+Microsoft ECOFF archives add a second symbol directory member, Figure 4, confusingly also called  {\f11 /} that follows the first one. 
+\par\pard\plain \s18\widctlpar\box\brdrsh\brdrs\brdrw15\brsp20 \f4\fs24
+{\i Figure 4: ECOFF second symbol directory \line}
+\par\pard\plain \s17\widctlpar \f11\fs24
+\line
+int nmembers;\tab /* count of member offsets */ \line
+int members[];\tab /* member offsets */ \line
+int nsymbols;\tab /* number of symbols */ \line
+ushort symndx[];\tab /* pointers to member offsets */ \line
+char strings[];\tab /* symbol names, in alphabetical order */ {\fs24 
+\par }
+\par\pard\plain
+\par\pard\plain
+The ECOFF directory consists of a count of member entries followed by an array of member offsets, one per archive member. Following that is a count of symbols, an array of two-byte member offset pointers, followed by the null terminated symbols in alphabetical order. The member offset pointers contain the one-based index in the member offset table of the member that defines the corresponding symbol. For example, to locate the member corresponding to the fifth symbol, consult the fifth entry in the pointer array which contains the index in the members array of the offset of the defining member. In theory the sorted symbols allow faster searching, but in practice the speedup is not likely to be large, since linkers typically scan the entire table looking for symbols to load, anyway. {\fs24 
+\par }
+ \pard\plain \s2\sb240\sa60\keepn\widctlpar \b\i\f5 Extension to 64 bits
+\par \pard\plain
+Even if an archive contains objects for a 64 bit architecture, there's no need to change the archive format for ELF or ECOFF unless the archive grows greater than 4GB. Nonetheless some 64 bit architectures have a different symbol directory format with a different member name such as {\f11 /SYM64/}. {\fs24 
+\par }
+ \pard\plain \s2\sb240\sa60\keepn\widctlpar \b\i\f5 Intel OMF libraries
+\par \pard\plain
+The final library format we look at is that used for Intel OMF libraries. Again, a library is a set of object files with a directory of symbols. Unlike the Unix libraries, the directory is at the end of the file, Figure 5. 
+\par\pard\plain \s18\widctlpar\box\brdrsh\brdrs\brdrw15\brsp20 \f4\fs24
+{\i Figure 5: OMF libraries \line}
+LIBHED record \linefirst object module (file) \linesecond object module (file) ... \lineLIBNAM module names record \lineLIBLOC module locations record \lineLIBDIC symbol directory \par\pard\plain
+The library starts with a LIBDIC record that contains the file offset of the LIBNAM record in a (block,offset) format used by Intel's ISIS operating system. The LIBNAM simply contains a list of module names, each name preceded by a count byte indicating the length of the name. The LIBLOC record contains a parallel list of (block,offset) file locations where each module starts. The LIBDIC contains a list of groups of counted strings with the names defined in each module, each group followed by a null byte to separate it from the subsequent group. {\fs24 
+\par }
+\par\pard\plain
+Although this format is a little clunky, it contains the necessary information and does the job. {\fs24 
+\par }
+\pard\plain \s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 Creating libraries
+\par \pard\plain
+Each archive format has its own technique for creating libraries. Depending on how much support the operating system provides for the archive format, library creation can involve anything from standard system file management programs to library-specific tools. {\fs24 
+\par }
+\par\pard\plain
+At one end of the spectrum, IBM MVS libraries are created by the standard IEBCOPY utility that creates partitioned data sets. In the middle, Unix libraries are created by the ``ar'' command that combines files into archives. For a.out archives, a separate program called ranlib added the symbol directory, reading the symbols from each member, creating the {\f11 __.SYMDEF} member and splicing it into the file. In principle ranlib could have created the symbol directory as a real file, then called ar to insert it in the archive, but in practice ranlib manipulated the archive directly. For COFF and ELF archives, the function of ranlib has moved into ar, which creates the sybol directory if any of the members appear to be object modules, although ar still can create archives of non-objects. {\fs24 
+\par }
+\par\pard\plain
+At the other end of the spectrum, OMF archives and Windows ECOFF archives are created by specialized librarian programs, since those formats have never been used for anything other than object code libraries. {\fs24 
+\par }
+\par\pard\plain
+One minor issue for library creation is the order of object files, particularly for the ancient formats that didn't have a symbol directory. Pre-ranlib Unix systems contained a pair of programs called lorder and tsort to help create archives. Lorder took as its input a set of object files (not libraries), and produced a dependency list of what files refered to symbols in what other files. (This is not hard to do; lorder was and still is typically implemented as a shell script that extracts the symbols using a symbol listing utility,  does a little text processing on the symbols, then uses standard sort and join utilities to create its output.) Tsort did a topological sort on the output of lorder, producing a sorted list of files so each symbol is defined after all the references to it, allowing a single sequential pass over the files to resolve all undefined references. The output of lorder was used to control ar. {\fs24 
+\par }
+\par\pard\plain
+Although the symbol directories in modern libraries allow the linking process to work regardless of the order of the objects within a library, most libraries are still created with lorder and tsort to speed up the linking process. {\fs24 
+\par }
+\pard\plain \s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 Searching libraries
+\par \pard\plain
+After a library is created, the linker has to be able to search it. Library search generally happens during the first linker pass, after all of the individual input files have been read. If the library or libraries have symbol directories, the linker reads in the directory, and checks each symbol in turn against the linker's symbol table. If the symbol is used but undefined, the linker includes that symbol's file from the library. It's not enough to mark the file for later loading; the linker has to process the symbols in the segments in the library file just like those in an explicitly linked file. The segments go in the segment table, and the symbols, both defined and undefined are entered into the global symbol table. It's quite common for one library routine to refer to symbols in another library routine, for example, a higher level I/O routine like {\f11 printf} might refer to a lower level {\f11 putc} or {\f11 write} routine. {\fs24 
+\par }
+\par\pard\plain
+Library symbol resolution is an interative process. After the linker has made a pass over the symbols in the directory, if it included any files from the library during that pass, it should make another pass to resolve any symbols required by the included files, until it makes a complete pass over the directory and finds nothing else to include. Not all linkers do this; many just make a single sequential pass over the directory and miss any backwards dependencies from a file to another file earlier in the library. Tools like tsort and lorder can minimize the difficulty due to single-pass linkers, but it's not uncommon for programmers to explcitly list the same library several times on the linker command line to force multiple passes and resolve all the symbols. {\fs24 
+\par }
+\par\pard\plain
+Unix linkers and many Windows linkers take an intermixed list of object files and libraries on the command line or in a control file, and process each in order, so that the programmer can control the order in which objects are loaded and libraries are searched. Although in principle this offers a great deal of flexibility and the ability to interpose private versions of library routines by listing the private versions before the library versions, in practice the ordered search provides little extra utility. Programmers invariably list all of their object files, then any application-specific libraries, then system libraries for math functions, network facilities and the like, and finally the standard system libraries. {\fs24 
+\par }
+\par\pard\plain
+When programmers use multiple libraries, it's often necessary to list libraries more than once when there are circular dependencies among libraries. That is, if a routine in library A depends on a routine in library B, but another routine in library B depends on a routine in library A, neither searching A followed by B or B followed by A will find all of the required routines. The problem becomes even worse when the dependencies involve three or more libraries. Telling the linker to search A B A or B A B, or sometimes even A B C D A B C D is inelegant but solves the problem. Since there are rarely any duplicated symbols among the libraries, if the linker simply searched them all as a group as IBM's mainframe linkers and AIX linker do, programmers would be well served. {\fs24 
+\par }
+\par\pard\plain
+The primary exception to this rule is that applications sometimes define private versions of a few routines, notably {\f11 malloc} and {\f11 free}, for heap storage management, and want to use them rather than the standard system versions. For that case, a linker flag specifically saying ``don't look for these symbols in the library'' would in most cases be preferable to getting the effect by putting the private malloc in the search order in front of the public one. {\fs24 
+\par }
+\pard\plain \s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 Performance issues
+\par \pard\plain
+The primary performance issue related to libraries used to be the time spent scanning libraries sequentially. Once symbol directories became standard, reading an input file from a library became insignificantly slower than reading a separate input file, and so long as libraries are topologically sorted, the linker rarely needs to make more than one pass over the symbol directory. {\fs24 
+\par }
+\par\pard\plain
+Library searches can still be slow if a library has a lot of tiny members. A typical Unix system library has over 600 members. Particularly in the now-common case that all of the library members are combined at runtime into a single shared library anyway,  it'd probably be faster to create a single object file that defines all of the symbols in the library and link using that rather than searching a library. We examine this in more detail in Chapter 9. {\fs24 
+\par }
+\pard\plain \s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 Weak external symbols
+\par \pard\plain
+The simple definition-reference model used for symbol resolution and library member selection turns out to be insufficiently flexible for many applications. For example, most C programs call routines in the {\f11 printf} family to format data for output. Printf can format all sorts of data, including floating point, which means that any program that uses printf will get the floating point libraries linked in even if the program doesn't actually use floating point. {\fs24 
+\par }
+\par\pard\plain
+For many years, PDP-11 Unix programs had to trick the linker to avoid linking the floating libraries in integer-only programs. The C compiler emitted a reference to the special symbol {\f11 fltused} in any routine that used floating point code. The C library was arranged as in Figure 6, taking advantage of the fact that the linker searched the library sequentially. If the program used floating point, the reference to fltused would cause the real floating point routines to be linked, including the real version of fcvt, the floating output routine. Then when the I/O module was linked to define printf, there was already a version of fcvt that satisfyed the reference in the I/O module. In programs that didn't use floating point, the real floating point routines wouldn't be loaded, since there wouldn't be any undefined symbols they resolved, and the reference to fcvt in the I/O module would be resolved by the stub floating routines that follow the I/O routines in the library. 
+\par\pard\plain \s18\widctlpar\box\brdrsh\brdrs\brdrw15\brsp20 \f4\fs24
+{\i Figure 6: Unix classic C library \line}
+... \lineReal floating point module, define fltused and fcvt \lineI/O module, defines printf, refers to fcvt \lineStub floating routines, define stub fcvt \line... \par\pard\plain
+While this trick works, using it for more than one or two symbols would rapidly become unwieldy, and its correct operation critically depends on the order of the modules in the library, something that's easy to get wrong when the library's rebuilt. {\fs24 
+\par }
+\par\pard\plain
+The solution to this dilemma is weak external symbols, external symbols that do not cause library members to be loaded. If a definition for the symbol is available, either in an explicitly linked file or due to a normal external causing a library member to be linked, a weak external is resolved like a normal external reference. But if no definition is available, the weak external is left undefined and in effect resolved to zero, which is not considered to be an error. In the case above, the I/O module would make a weak reference to fcvt, the real floating point module would follow the I/O module in the library, and no stub routines would be necessary. Now if there's a reference to fltused, the floating point routines are linked and define fcvt. If not, the reference to fcvt remains unresolved. This no longer is dependent on library order, and will work even if the library makes multiple resolution passes over the library. {\fs24 
+\par }
+\par\pard\plain
+ELF adds yet another kind of weak symbol, a weak definition as well as a weak reference. A weak definition defines a global symbol if no normal definition is available. If a normal definition is available, the weak definition is ignored. Weak definitions are infrequently used but can be useful to define error stubs without putting the stubs in separate modules. {\fs24 
+\par }
+\pard\plain \s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 Exercises
+\par \pard\plain
+What should a linker do if two modules in different libraries define the same symbol? Is it an error? {\fs24 
+\par }
+\par\pard\plain
+Library symbol directories generally include only defined global symbols. Would it be useful to include undefined global symbols as well? {\fs24 
+\par }
+\par\pard\plain
+When sorting object files using lorder and tsort, it's possible that tsort won't be able to come up with a total order for the files. When will this happen, and is it a problem? {\fs24 
+\par }
+\par\pard\plain
+Some library formats put the directory at the front of the library while others put it at the end. What practical difference does it make? {\fs24 
+\par }
+\par\pard\plain
+Describe some other situations where weak externals and weak definitions are useful. {\fs24 
+\par }
+\pard\plain \s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 Project
+\par \pard\plain
+{\fs24 
+\par }
+\par\pard\plain
+This part of the project adds library searching to the linker. We'll experiment with two different library formats. The first is the IBM-like directory format suggested early in the chapter. A library is a directory, each member is a file in the directory, each file having names for each of the exported files in the directory. If you're using a system that doesn't support Unix-style multiple names, fake it. Give each file a single name (choose one of the exported symbols). Then make a file named MAP that contains lines of the form: \par\pard\plain \s17\widctlpar \f11\fs24
+\line
+name sym sym sym ... {\fs24 
+\par }
+\par\pard\plain
+where name is the file's name and sym are the rest of the exported symbols. {\fs24 
+\par }
+\par\pard\plain
+The second library format is a single file. The library starts with a single line: \par\pard\plain \s17\widctlpar \f11\fs24
+\line
+LIBRARY nnnn pppppp {\fs24 
+\par }
+\par\pard\plain
+where nnnn is the number of modules in the library and pppppp is the offset in the file where the library directory starts. Following that line are the library members, one after another. At the end of the file, starting at offset pppppp is the library directory, which consists of lines, one per module, in the format: \par\pard\plain \s17\widctlpar \f11\fs24
+\line
+pppppp llllll sym1 sym2 sym3 ... {\fs24 
+\par }
+\par\pard\plain
+where pppppp is the position in the file where the module starts, llllll is the length of the module, and the symi are the symbols defined in this module. {\fs24 
+\par }
+\par\pard\plain
+{\i Project 6-1:} Write a librarian that creates a directory-format library from a set of object files. Be sure to do something reasonable with duplicate symbols. Optionally, extend the librarian so it can take an existing library and add, replace, or delete modules in place. {\fs24 
+\par }
+\par\pard\plain
+{\i Project 6-2:} Extend the linker to handle directory-format libraries. When the linker encounters a library in its list of input files, search the library and include each module in the library that defines an undefined symbol. Be sure you correctly handle library modules that depend on symbols defined in other library members. {\fs24 
+\par }
+\par\pard\plain
+{\i Project 6-3:} Write a librarian that creates a directory-format library from a set of object files. Note that you can't correctly write the LIBRARY line at the front of the file until you know the sizes of all of the modules. Reasonable approaches include writing a dummy library line, then seeking back and rewriting line in place with the correct values, collecting the sizes of the input files and computing the sizes, or buffering the entire file in main memory. Optionally, extend the librarian to update an existing library, and note that it's a lot harder than updating a directory format library. {\fs24 
+\par }
+\par\pard\plain
+{\i Project 6-4:} Extend the linker to handle file-format libraries. When the linker encounters a library in its list of input files, search the library and include each module in the library that defines an undefined symbol. You'll have to modify your routines that read object files so that they can read an object modules from the middle of a library. }

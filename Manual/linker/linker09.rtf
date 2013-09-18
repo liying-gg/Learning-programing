@@ -1,0 +1,298 @@
+{\rtf1\ansi 
+\deff4\deflang1033
+{\fonttbl{\f1\froman\fcharset2\fprq2 Symbol;}
+{\f4\froman\fcharset0\fprq2 Times New Roman;}
+{\f5\fswiss\fcharset0\fprq2 Arial;}
+{\f11\fmodern\fcharset0\fprq1 Courier New;}}
+{\colortbl;\red0\green0\blue0;\red0\green0\blue255;\red0\green255\blue255;
+\red0\green255\blue0;\red255\green0\blue255;\red255\green0\blue0;
+\red255\green255\blue0;\red255\green255\blue255;\red0\green0\blue128;
+\red0\green128\blue128;\red0\green128\blue0;
+\red128\green0\blue128;\red128\green0\blue0;\red128\green128\blue0;
+\red128\green128\blue128;\red192\green192\blue192;}
+{\stylesheet
+{\widctlpar \f4\fs24 \snext0 Normal;}{\s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 \sbasedon0\snext0 heading 1;}
+{\s2\sb240\sa60\keepn\widctlpar \b\i\f5 \sbasedon0\snext0 heading 2;}
+{\s3\sb240\sa60\keepn\widctlpar \f5 \sbasedon0\snext0 heading 3;}
+{\*\cs10 \additive Default Paragraph Font;}
+{\s15\widctlpar\brdrb\brdrs\brdrw15\brsp20 \tqc\tx4320\tqr\tx8640 \f4\fs24 
+\sbasedon0\snext15 header;}
+{\s16\fi-360\li360\widctlpar{\*\pn \pnlvl11\pnf1\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\f4\fs24 \sbasedon0\snext16 List Bullet;}
+{\s17\widctlpar \f11\fs24 \sbasedon0\snext17 Code;}
+{\s18\widctlpar\box\brdrsh\brdrs\brdrw15\brsp20 \f4\fs24 \sbasedon0\snext18 Figure;}
+{\s19\widctlpar\tqc\tx4320\tqr\tx8640 \f4\fs24 \sbasedon0\snext19 footer;}
+{\*\cs20 \additive\sbasedon10 page number;}}
+{\info{\title Linkers and loader chapter}
+{\author John R. Levine}
+{\operator John R. Levine}
+{\*\company I.E.C.C.}{\vern57431}}
+\widowctrl\ftnbj\aenddoc\formshade \fet0\sectd \linex0\endnhere 
+
+{\header \pard\plain \s15\widctlpar\brdrb\brdrs\brdrw15\brsp20 \tqc\tx4320\tqr\tx8640 \f4\fs24
+{\i Shared libraries\tab \tab }{\field{\*\fldinst {\cs20  PAGE }}
+{\fldrslt {\cs20\lang1024 1}}}}
+\pard\plain \s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 Chapter XX: Shared libraries
+\par\pard\plain
+{\i $Revision: 2.3 $} \line{\i $Date: 1999/06/15 03:30:36 $} {\fs24 
+\par }
+\par\pard\plain
+Program libraries date back to the earliest days of computing, since programmers quickly realized that they could save a lot of time and effort by reusing chunks of program code. With the advent of compilers for languages like Fortran and COBOL, libraries became an integral part of programming. Compiled languages use libraries explictly when a program calls a standard procedure such as sqrt(), and they use libraries implicitly for I/O, conversions, sorting, and many other functions too complex to express as in-line code. As languages have gotten more complex, libraries have gotten correspondingly more complex. When I wrote a Fortran 77 compiler twenty years ago, the runtime library was already more work than the compiler itself, and a Fortran 77 library is far simpler than one for C++. {\fs24 
+\par }
+\par\pard\plain
+The growth of language libraries means not only that all programs include library code, but that most programs include a lot of the same library code. Every C program, for example, uses the system call library, nearly all use the standard I/O library routines such as printf, and many use other popular libraries for math, networking, and other common functions. This means that in a typical Unix system with a thousand compiled programs, there's close to a thousand copies of printf. If all those programs could share a single copy of the library routines they use, the savings in disk space would be substantial. (On a Unix system without shared libraries, there's five to ten megabytes of copies of printf alone.) Even more important, if running programs could share a single in-memory copy of the libraries, the main memory savings could be very significant, both saving memory and improving paging behavior. {\fs24 
+\par }
+\par\pard\plain
+All shared library schemes work essentially the same way. At link time, the linker searches through libraries as usual to find modules that resolve otherwise undefined external symbols. But rather than copying the contents of the module into the output file, the linker makes a note of what library the module came from, and puts a list of the libraries in the executable. When the program is loaded, startup code finds those libraries and maps them into the program's address space before the program starts, Figure 1. Standard operating system file mapping semantics automatically share pages that are mapped read-only or copy-on-write. The startup code that does the mapping may be in the operating system, the executable, in a special dynamic linker mapped into the process' address space, or some combination of the three. 
+\par\pard\plain \s18\widctlpar\box\brdrsh\brdrs\brdrw15\brsp20 \f4\fs24
+{\i Figure 1: Program with shared libraries \line}
+Picture of executable, shared libraries \linemain excutable, app library, C library \linefiles from different places \linearrows show refs from main to app, main to C, app to C \par\pard\plain
+{\fs24 
+\par }
+\par\pard\plain
+In this chapter, we look at static linked shared libraries, that is, libraries where program and data addresses in libraries are bound to executables at link time. In the next chapter we look at the considerably more complex dynamic linked libraries. Although dynamic linking is more flexible and more "modern", it's also a lot slower than static linking because a great deal of work that would otherwise have been done once at link time is redone each time a dynamically linked program starts. Also, dynamically linked programs usually use extra ``glue'' code to call routines in shared libraries. The glue usually contains several jumps, which can slow down calls considerably. On systems that support both static and dynamic shared libraries, unless programs need the extra flexibility of dynamic linking, they're faster and smaller with static linked libraries. {\fs24 
+\par }
+\pard\plain \s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 Binding time
+\par \pard\plain
+Shared libraries raise binding time issues that don't apply to conventionally linked programs. A program that uses a shared library depends on having that shared library available when the program is run. One kind of error occurs when the required libraries aren't present. There's not much to be done in that case other than printing a cryptic error message and exiting. {\fs24 
+\par }
+\par\pard\plain
+A much more interesting problem occurs when the library is present, but the library has changed since the program was linked. In a conventionally linked program, symbols are bound to addresses and library code is bound to the executable at link time, so the library the program was linked with is the one it uses regardless of subsequent changes to the library.. With static shared libraries, symbols are still bound to addresses  at link time, but library code isn't bound to the executable until run time. (With dynamic shared libraries, they're both delayed until runtime.) {\fs24 
+\par }
+\par\pard\plain
+A static linked share library can't change very much without breaking the programs that it is bound to. Since the addresses of routines and data in the library are bound into the program, any changes in the addresses to which the program is bound will cause havoc. {\fs24 
+\par }
+\par\pard\plain
+A static shared library can sometimes be updated without breaking the programs that use it, if the updates can be made in a way that don't move any addresses in the library that programs depend on. This permits "minor version" updates, typically for small bug fixes. Larger changes unavoidably change program addresses, which means that a system either needs multiple versions of the library, or forces programmers to relink all their programs each time the library changes. In practice, the solution is invariably multiple versions, since disk space is cheap and tracking down every executable that might have used a shared library is rarely possible. {\fs24 
+\par }
+\pard\plain \s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 Shared libraries in practice
+\par \pard\plain
+In the rest of this chapter we concentrate on the static shared libraries provided in UNIX System V Release 3.2 (COFF format), older Linux systems (a.out format), and the BSD/OS derivative of 4.4BSD (a.out and ELF formats.) All three work nearly the same, but some of the differences are instructive. The SVR3.2 implementation required changes in the linker to support searching shared libraries, and extensive operating system support to do the runtime startup required. The Linux implemention required one small tweak to the linker and added a single system call to assist in library mapping. The BSD/OS implementation made no changes at all to the linker or operating system, using a shell script to provide the necessary arguments to the linker and a modified version of the standard C library startup routine to map in the libraries. {\fs24 
+\par }
+\pard\plain \s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 Address space management
+\par \pard\plain
+The most difficult aspect of shared libraries is address space management. Each shared library occupies a fixed piece of address space in each program in which it is used. Different libraries have to use non-overlapping addresses if they can be used in the same program. Although it's possible to check mechanically that libraries don't overlap, assigning address space to libraries is a black art. On the one hand, you want to leave some slop in between them so if a new version of one library grows a little, it won't bump into the next library up. On the other hand, you'd like to put your popular libraries as close together as possible to minimize the number of page tables needed. (Recall that on an x86, for example, there's a second level table for each 4MB block of address space active in a process.) {\fs24 
+\par }
+\par\pard\plain
+There's invariably a master table of shared library address space on each system, with libraries starting some place in the address space far away from applications. Linux's start at hex 60000000, BSD/OS at a0000000. Commercial vendors subdivide the address space further between vendor supplied libraries and user and third-party libraries which start at a0800000 in BSD/OS, for example. {\fs24 
+\par }
+\par\pard\plain
+Generally both the code and data addresses for each library are explicitly defined, with the data area starting on a page boundary a page or two after the end of the code. This makes it possible to create minor version updates, since the updates frequently don't change the data layout, but just add or change code. {\fs24 
+\par }
+\par\pard\plain
+Each individual shared library exports symbols, both code and data, and usually also imports symbols if the library depends on other libraries. Although it would work if one just linked routines together into a shared library in haphazard order, real libraries use some discipline in assigning addresses to make it easier, or at least possible, to update a library without changing the addresses of exported symbols. For code addresses, rather than exporting the actual address of each routine, the library contains a table of jump instructions which jump to all of the routines, with the addresses of the jump instructions exported as the addresses of the routines. All jump instruction are the same size, so the addresses in the jump table are easy to compute and won't change from version to version so long as no entries are added or deleted in the middle of the table. One extra jump per routine is an insignificant slowdown, but since the actual routine addresses are not visible, new versions of the library will be compatible even if routines in the new version aren't all the same sizes and addresses as in the old version. {\fs24 
+\par }
+\par\pard\plain
+For exported data, the situation is more difficult, since there's no easy way to add a level of indirection like the one for code addresses. In practice it turns out that exported data tends to be tables of known sizes that change rarely, such as the array of {\f11 FILE} structures for the C standard I/O library or single word values like {\f11 errno} (the error code from the most recent system call) or {\f11 tzname} (pointers to two strings giving the name of the current time zone.) With some manual effort, the programmer who creates the shared library can collect the exported data at the front of the data section in front of any anonymous data that are part of individual routines, making it less likely that exported addresses will change from one version to the next. {\fs24 
+\par }
+\pard\plain \s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 Structure of shared libraries
+\par \pard\plain
+The shared library is an executable format file that contains all of the library code and data, ready to be mapped in, Figure 2. 
+\par\pard\plain \s18\widctlpar\box\brdrsh\brdrs\brdrw15\brsp20 \f4\fs24
+{\i Figure 2: Structure of typical shared library \line}
+File header, a.out, COFF, or ELF header \line(Initialization routine, not always present) \lineJump table \lineCode \lineGlobal data \linePrivate data \par\pard\plain
+Some shared libraries start with a small bootstrap routine used to map in the rest of the library. After that comes the jump table, aligned on a page boundary if it's not the first thing in the library. The exported address of each public routine in the library is the jump table entry. Following the jump table is the rest of the text section (the jump table is considered to be text, since it's executable code), then the exported data and private data. The bss segment logically follows the data, but as in any other executable file, isn't actually present in the file. {\fs24 
+\par }
+\pard\plain \s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 Creating shared libraries
+\par \pard\plain
+A UNIX shared library actually consists of two related files, the shared library itself and a stub library for the linker to use. A library creation utility takes as input a normal library in archive format and some files of control information and uses them to create create the two files. The stub library contains no code or data at all (other than possibly a tiny bootstrap routine) but contains symbol definitions for programs linked with the library to use. {\fs24 
+\par }
+\par\pard\plain
+Creating the shared library involves these basic steps, which we discuss in greater detail below: \par\pard\plain \s16\fi-360\li360\widctlpar
+{\*\pn \pnlvlblt\pnf1\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\f4\fs24
+Determine at what address the library's code and data will be loaded. \par\pard\plain \s16\fi-360\li360\widctlpar
+{\*\pn \pnlvlblt\pnf1\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\f4\fs24
+Scan through the input library to find all of the exported code symbols. (One of the control files may be a list of some of symbols not to export, if they're just used for inter-routine communication within the library.) \par\pard\plain \s16\fi-360\li360\widctlpar
+{\*\pn \pnlvlblt\pnf1\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\f4\fs24
+Make up the jump table with an entry for each exported code symbol. \par\pard\plain \s16\fi-360\li360\widctlpar
+{\*\pn \pnlvlblt\pnf1\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\f4\fs24
+If there's an initialization or loader routine at the beginning of the library, compile or assemble that. \par\pard\plain \s16\fi-360\li360\widctlpar
+{\*\pn \pnlvlblt\pnf1\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\f4\fs24
+Create the shared library: Run the linker and link everything together into one big executable format file. \par\pard\plain \s16\fi-360\li360\widctlpar
+{\*\pn \pnlvlblt\pnf1\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\f4\fs24
+Create the stub library: Extract the necessary symbols from the newly created shared library,  reconcile those symbols with the symbols from the input library, create a stub routine for each library routine, then compile or assemble the stubs and combine them into the stub library. In COFF libraries, there's also a little initialization code placed in the stub library to be linked into each executable. {\fs24 
+\par }
+ \pard\plain \s2\sb240\sa60\keepn\widctlpar \b\i\f5 Creating the jump table
+\par \pard\plain
+The easiest way to create the jump table is to write an assembler source file full of jump instructions, Figure 3, and assemble it. Each jump instruction needs to be labelled in a systematic way so that the addresses can later be extracted for the stub library. {\fs24 
+\par }
+\par\pard\plain
+A minor complication occurs on architectures like the x86 that have different sizes of jump instructions. For libraries containing less than 64K of code, short 3 byte jumps are adequate. For libraries larger than that, longer 5 byte jumps are necessary. Mixed sizes of jumps aren't very satisfactory, both because it makes the table addresses harder to compute and because it makes it far harder to make the jump table compatible in future builds of the library. The simplest solution is to make all of the jumps the largest size. Alternatively, make all of the jumps short, and for routines that are too far away for short jumps, generate anonymous long jump instructions at the end of the table to which short instructions can jump. (That's usually more trouble than it's worth, since jump tables are rarely more than a few hundred entries in the first place.) 
+\par\pard\plain \s18\widctlpar\box\brdrsh\brdrs\brdrw15\brsp20 \f4\fs24
+{\i Figure 3: Jump table \line}
+\par\pard\plain \s17\widctlpar \f11\fs24
+\line
+ ... start on a page boundary \line
+.align 8\tab ; align on 8-byte boundary for variable length insns \line
+JUMP_read: jmp _read \line
+.align 8 \line
+JUMP_write: jmp _write \line
+ ... \line
+_read: ... code for read() \line
+ ... \line
+_write: ... code for write() {\fs24 
+\par }
+\par\pard\plain
+\par\pard\plain
+{\fs24 
+\par }
+ \pard\plain \s2\sb240\sa60\keepn\widctlpar \b\i\f5 Creating the shared library
+\par \pard\plain
+Once the jump table and, if needed, the loader routine are created, creating the shared library is easy. Just run the linker with suitable switches to make the code and data start at the right places, and link together the bootstrap, the jump tables, and all of the routines from the input library. This both assigns addresses to everything in the library and creates the shared library file. {\fs24 
+\par }
+\par\pard\plain
+One minor complication involves interlibrary references. If you're creating, say, a shared math library that uses routines from the shared C library, the references have to be made correctly. Assuming that the library whose routines are needed has already been built when the linker builds the new library, it needs only to search the old library's stub library, just like any normal executable that refers to the old library. This will get all of the references correct. The only remaining issue is that there needs to be some way to ensure that any programs that use the new library also link to the old library. Suitable design of the new stub library can ensure that. {\fs24 
+\par }
+ \pard\plain \s2\sb240\sa60\keepn\widctlpar \b\i\f5 Creating the stub library
+\par \pard\plain
+Creating the stub library is one of the trickier parts of the shared library process. For each routine in the real library, the stub library needs to contain a corresponding entry that defines both the exported and imported global symbols. {\fs24 
+\par }
+\par\pard\plain
+The data global symbols are wherever the linker put them in the shared library image, and the most reasonable way to get their values is to create the shared library with a symbol table and extract the symbols from that symbol table. For code global symbols, the entry points are all in the jump table, so it's equally easy to extract the symbols from the shared library or compute the addresses from the base address of the jump table and each symbol's position in the table. {\fs24 
+\par }
+\par\pard\plain
+Unlike a normal library module, a module in the stub library contains no code nor data, but just has symbol definitions. The symbols have to be defined as absolute numbers rather than relocatable, since the shared library has already had all of its relocation done. The library creation program extracts each routine from the input library, and from that routine gets the defined and undefined globals, as well as the type (text or data) of each global. It then writes the stub routine, usually as a little assembler program, defining each text global as the address of the jump table entry, each data or bss global as the actual address in the shared library, and each undefined global as undefined. When it has a complete set of stub sources, it assembles them all and combines them into a normal library archive. {\fs24 
+\par }
+\par\pard\plain
+COFF stub libraries use a different, more primitive design. They're single object files with two named sections. The {\f11 .lib} section contains all of the relocation information pointing at the shared library, and the {\f11 .init} section contains initialization code that is linked into each client program, typically to initialize variables in the shared library. {\fs24 
+\par }
+\par\pard\plain
+Linux shared libraries are simpler still, an a.out file containing the symbol definitions with "set vector" symbols described in more detail below for use at program link time. {\fs24 
+\par }
+\par\pard\plain
+Shared libraries have names assigned that are mechanically derived from the original library, adding a version number. If the original library was called {\f11 /lib/libc.a}, the usual name for the C library, and the current library version is 4.0, the stub library might be {\f11 /lib/libc_s.4.0.0.a} and the shared library image {\f11 /shlib/libc_s.4.0.0}. (The extra zero allows for minor version updates.) Once the libraries are moved into the appropriate directories they're ready to use. {\fs24 
+\par }
+ \pard\plain \s2\sb240\sa60\keepn\widctlpar \b\i\f5 Version naming
+\par \pard\plain
+Any shared library system needs a way to handle multiple versions of libraries. When a library is updated, the new version may or may not be address-compatible and call-compatible with previous versions. Unix systems address this issue with the multi-number version names mentioned above. {\fs24 
+\par }
+\par\pard\plain
+The first number changes each time a new incompatible version of the library is released.  A program linked with a 4.x.x library can't use a 3.x.x nor a 5.x.x. The second number is the minor version. On Sun systems, each executable requires a minor version at least as great as the one with which the executable was linked. If it were linked with 4.2.x, for example, it would run with a 4.3.x library but not a 4.1.x. Other systems treat the second component as an extension of the the first component, so an executable linked with a 4.2.x library will only run with a 4.2.x library. The third component is universally treated as a patch level. Executables prefer the highest available patch level, but any patch level will do. {\fs24 
+\par }
+\par\pard\plain
+Different systems take slightly different approaches to finding the appropriate libraries at runtime. Sun systems have a fairly complex runtime loader that looks at all of the file names in the library directory and picks the best one. Linux systems use symbolic links to avoid the search process. If the latest version of the libc.so library is version 4.2.2, the library's name is {\f11 libc_s.4.2.2}, but the library is also linked to {\f11 libc_s.4.2} so the loader need only open the shorter name and the correct version is selected. {\fs24 
+\par }
+\par\pard\plain
+Most systems permit shared libraries to reside in multiple directories. An environment variable such as {\f11 LD_LIBRARY_PATH} can override the path built into the executable, permitting developers to substitute library versions in their private directories for debugging or performance testing. (Programs that use the "set user ID" feature to run as other than the current user have to ignore {\f11 LD_LIBRARY_PATH} to prevent a malicious user from substituting a trojan horse library.)  {\fs24 
+\par }
+\pard\plain \s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 Linking with shared libraries
+\par \pard\plain
+Linking with static shared libraries is far simpler than creating the libraries, because the process of creating the stub libraries has already done nearly all the hard work to make the linker resolve program addresses to the appropriate places in the libraries. The only hard part is arranging for the necessary shared libraries to be mapped in when the program starts. {\fs24 
+\par }
+\par\pard\plain
+Each format provides a trick to let the linker create a list of libraries that startup code can use to map in the libraries. COFF libraries use a brute force approach; ad hoc code in the linker creates a section in the COFF file with the names of the libraries. The Linux linker had a somewhat less brute force approach that created a special symbol type called a "set vector". Set vectors are treated like normal global symbols, except that if there are multiple definitions, the definitions are all put in an array named by the symbol. Each shared library stub defines a set vector symbol {\f11 ___SHARED_LIBRARIES__} that is the address of a structure containing the name, version, and load address of the library. The linker creates an array of pointers to each of those structures and calls it {\f11 ___SHARED_LIBRARIES__} so the runtime startup code can use it. {\b } The BSD/OS shared library scheme uses no linker tricks at all. Rather, the shell script wrapper used to create a shared executable runs down the list of libraries passed as arguments to the command or used implicitly (the C library), extracts the file names and load addresses for those libraries from a list in a system file, writes a little assembler source file containing an array of structures containing library names and load addresses, assembles that file, and includes the object file in the list of arguments to the linker. {\fs24 
+\par }
+\par\pard\plain
+In each case, the references from the program code to the library addresses are resolved automatically from the addresses in the stub library. {\fs24 
+\par }
+\pard\plain \s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 Running with shared libraries
+\par \pard\plain
+Starting a program that uses shared libraries involves three steps: loading the executable, mapping the libraries, and doing library-specific initialization. In each case, the program executable is loaded into memory by the system in the usual way. After that, the different schemes diverge. The System V.3 kernel had extensions to handle COFF shared library executables and the kernel internally looked at the list of libraries and mapped them in before starting the program. The disadvantages of this scheme were ``kernel bloat'', adding more code to the nonpagable kernel, and inflexibility, since it didn't permit any flexibility or upgradability in future versions. (System V.4 scrapped the whole scheme and went to ELF dynamic shared libraries which we address in the next chapter.) {\fs24 
+\par }
+\par\pard\plain
+Linux added a single uselib() system call that took the file name and address of a library and mapped it into the program address space. The startup routine bound into the executable ran down the list of libraries, doing a uselib() on each. {\fs24 
+\par }
+\par\pard\plain
+The BSD/OS scheme uses the standard mmap() system call that maps pages of a file into the address space and a bootstrap routine that is linked into each shared library as the first thing in the library. The startup routine in the executable runs down the table of shared libraries, and for each one opens the file, maps the first page of the file to the load address, and then calls the bootstrap routine which is at a fixed location near the beginning of that page following the executable file header. The bootstrap routine then maps the rest of the text segment, the data segment, and maps fresh address space for the bss segment, then returns. {\fs24 
+\par }
+\par\pard\plain
+Once the segments are all mapped, there's often some library-specific initialization to do, for example, putting a pointer to the system environment strings in the global variable {\f11 environ} specified by standard C. The COFF implementation collects the initialization code from the {\f11 .init} segments in the program file, and runs it from the program startup code. Depending on the library it may or may not call routines in the shared library. The Linux implemention doesn't do any library initialization and documents the problem that variables defined in both the program and the library don't work very well. {\fs24 
+\par }
+\par\pard\plain
+In the BSD/OS implementation, the bootstrap routine for the C library receives a pointer to the table of shared libraries and maps in all of the other libraries, minimizing the amount of code that has to be linked into individual executables. Recent versions of BSD use ELF format executables. The ELF header has a {\f11 interp} section containing the name of an "interpreter" program to use when running the file. BSD uses the shared C library as the interpreter, which means that the kernel maps in the shared C library before the program starts, saving the overhead of some system calls. The library bootstrap routine does the same initializations, maps the rest of the libraries, and, via a pointer, calls the main routine in the program. {\fs24 
+\par }
+\pard\plain \s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 The malloc hack, and other shared library problems
+\par \pard\plain
+Although static shared libraries have excellent performance, their long-term maintenance is difficult and error-prone, as this anecdote illustrates. {\fs24 
+\par }
+\par\pard\plain
+In a static library, all intra-library calls are permanently bound, and it's not possible to substitute a private version of a routine by redefining the routine in a program that uses the library. For the most part, that's not a problem since few programs redefine standard library routines like {\f11 read()} or {\f11 strcmp()}, or even if they do it's not a major problem if the program uses a private version of  {\f11 strcmp()} while routines in the library call the standard version. {\fs24 
+\par }
+\par\pard\plain
+But a lot of programs define their own versions of  {\f11 malloc()} and {\f11 free()}, the routines that allocate heap storage, and multiple versions of those routines in a program don't work. The standard {\f11 strdup()} routine, for example, returns a pointer to a string allocated by malloc, which the application can free when no longer needed. If the library allocated the string one version of malloc, but the application freed that string with a different version of free, chaos would ensue. {\fs24 
+\par }
+\par\pard\plain
+To permit applications to provide their own versions of malloc and free, the System V.3 shared C library uses an ugly hack, Figure 4. The system's maintainers redefined malloc and free as indirect calls through pointers bound into the data part of the shared library that we'll call {\f11 malloc_ptr} and {\f11 free_ptr.} \par\pard\plain \s17\widctlpar \f11\fs24
+\line
+extern void *(*malloc_ptr)(size_t); \line
+extern void (*free_ptr)(void *); \line
+#define malloc(s) (*malloc_ptr)(s) \line
+#define free(s) (*free_ptr)(s) {\fs24 
+\par }
+\par\pard\plain
+
+\par\pard\plain \s18\widctlpar\box\brdrsh\brdrs\brdrw15\brsp20 \f4\fs24
+{\i Figure 4: The malloc hack \line}
+picture of program, shared C library. \linemalloc pointer and init code \lineindirect calls from library code \par\pard\plain
+Then they recompiled the entire C library, and added these lines (or the assembler equivalent) to the {\f11 .init} section of the stub library, so they are included in every program that uses the shared library. \par\pard\plain \s17\widctlpar \f11\fs24
+\line
+#undef malloc \line
+#undef free malloc_ptr = &malloc; \line
+free_ptr = &free; {\fs24 
+\par }
+\par\pard\plain
+Since the stub library is bound into the application, not the shared library, its references to malloc and free are resolved at the time each program is linked. If there's a private version of malloc and free, it puts pointers to them in the pointers, otherwise it will use the standard library version. Either way, the library and the application use the same version of malloc and free. {\fs24 
+\par }
+\par\pard\plain
+Although the implementation of this trick made maintenance of the library harder, and doesn't scale to more than a few hand-chosen names, the idea that intra-library calls can be made through pointers that are resolved at program runtime is a good one, so long as it's automated and doesn't require fragile manual source code tweaks. We'll find out how the automated version works in the next chapter. {\fs24 
+\par }
+\par\pard\plain
+Name conflicts in global data remain a problem with static shared libraries. Consider the small program in Figure 5. If you compile and link it with any of the shared libraries we described in this chapter, it will print a status code of zero rather than the correct error code. That's because \par\pard\plain \s17\widctlpar \f11\fs24
+\line
+int errno; {\fs24 
+\par }
+\par\pard\plain
+defines a new instance of errno which isn't bound to the one in the shared library. If you uncomment the {\f11 extern}, the program works, because now it's an undefined global reference which the linker binds to the errno in the shared library. As we'll see, dynamic linking solves this problem as well, at some cost in performance. 
+\par\pard\plain \s18\widctlpar\box\brdrsh\brdrs\brdrw15\brsp20 \f4\fs24
+{\i Figure 5: Address conflict example \line}
+\par\pard\plain \s17\widctlpar \f11\fs24
+\line
+#include <stdio.h> /* extern */ \line
+int errno; main() \line
+\{ \line
+  unlink("/non-existent-file"); \line
+  printf("Status was %d\\ n", errno); \line
+\} {\fs24 
+\par }
+\par\pard\plain
+\par\pard\plain
+{\fs24 
+\par }
+\par\pard\plain
+Finally, even the jump table in Unix shared libraries has been known to cause compatibility problems. From the point of view of routines outside a shared library, the address of each exported routine in the library is the address of the jump table entry. But from the point of view of routines within the library, the address of that routine may be the jump table entry, or may be the real entry point to which the table entry jumps. There have been cases where a library routine compared an address passed as an argument to see if it were one of the other routines in the library, in order to do some special case processing. {\fs24 
+\par }
+\par\pard\plain
+An obvious but less than totally effective solution is to bind the address of the routine to the jump table entry while building the shared library, since that ensures that all symbolic references to routines within the library are resolved to the table entry. But if two routines are within the same object file, the reference in the object file is usually a relative reference to the routine's address in the text segment. (Since it's in the same object file, the routine's address is known and other than this peculiar case, there's no reason to make a symbolic reference back into the same object file.) Although it would be possible to scan relocatable text references for values that match exported symbol addresses, the most practical solution to this problem is ``don't do that'', don't write code that depends on recognizing the address of a library routine. {\fs24 
+\par }
+\par\pard\plain
+Windows DLLs have a similar problem, since within each EXE or DLL, the addresses of imported routines are considered to be the addresses of the stub routines that make indirect jumps to the real address of the routine. Again, the most practical solution to the problem is ``don't do that.'' {\fs24 
+\par }
+\pard\plain \s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 Exercises
+\par \pard\plain
+{\fs24 
+\par }
+\par\pard\plain
+If you look in a /shlib directory on a Unix system with shared libraries, you'll usually see three or four versions of each library with names like {\f11 libc_s.2.0.1} and {\f11 libc_s.3.0.0}. Why not just have the most recent one? {\fs24 
+\par }
+\par\pard\plain
+In a stub library, why is it important to include all of the undefined globals for each routine, even if the undefined global refers to another routine in the shared library? {\fs24 
+\par }
+\par\pard\plain
+What difference would it make if a stub library were a single large executable with all of the library's symbols as in COFF or Linux, or an actual library with separate modules? {\fs24 
+\par }
+\pard\plain \s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 Project
+\par \pard\plain
+We'll extend the linker to support static shared libraries. This involves several subprojects, first to create the shared libraries, and then to link exectables with the shared libraries. {\fs24 
+\par }
+\par\pard\plain
+A shared library in our system is merely an object file which is linked at a given address. There can be no relocations and no unresolved symbol references, although references to other shared libraries are OK. Stub libraries are normal directory-format or file-format libraries, with each entry in the library containing the exported (absolute) and imported symbols for the corresponding library member but no text or data. Each stub library has to tell the linker the name of the corresponding shared library. If you use directory format stub libraries, a file called "LIBRARY NAME" contains lines of text. The first line is the name of the corresponding shared library, and the rest of the lines are the names of other shared libraries upon which this one depends. (The space prevents name collisions with symbols.) If you use file format libraries, the initial line of the library has extra fields: \par\pard\plain \s17\widctlpar \f11\fs24
+\line
+LIBRARY nnnn pppppp fffff ggggg hhhhh ... {\fs24 
+\par }
+\par\pard\plain
+where fffff is the name of the shared library and the subsequent fields are the names of any other shared libraries on which it depends. {\fs24 
+\par }
+\par\pard\plain
+{\i Project 9-1:} Make the linker produce static shared libraries and stub libraries from regular directory or file format libraries. If you haven't already done so, you'll have to add a linker flag to set the base address at which the linker allocates the segments. The input is a regular library, and stub libraries for any other shared libraries on which this one depends. The output is an executable format shared library containing the segments of all of the members of the input library,  and a stub library with a stub member corresponding to each member of the  input library. {\fs24 
+\par }
+\par\pard\plain
+{\i Project 9-2:} Extend the linker to create executables using static shared libraries. Project 9-1 already has most of the work of searching stub libraries symbol resolution, since the way that an executable refers to symbols in a shared library is the same as the way that one shared library refers to another. The linker needs to put the names of the required libraries in the output file, so that the runtime loader knows what to load. Have the linker create a segment called {\f11 .lib} that contains the names of the shared libraries as strings with a null byte separating the strings and two null bytes at the end. Create a symbol {\f11 _SHARED_LIBRARIES} that refers to the beginning of the {\f11 .lib} section to which code in the startup routine can refer.   }

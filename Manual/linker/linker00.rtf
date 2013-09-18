@@ -1,0 +1,127 @@
+{\rtf1\ansi 
+\deff4\deflang1033
+{\fonttbl{\f1\froman\fcharset2\fprq2 Symbol;}
+{\f4\froman\fcharset0\fprq2 Times New Roman;}
+{\f5\fswiss\fcharset0\fprq2 Arial;}
+{\f11\fmodern\fcharset0\fprq1 Courier New;}}
+{\colortbl;\red0\green0\blue0;\red0\green0\blue255;\red0\green255\blue255;
+\red0\green255\blue0;\red255\green0\blue255;\red255\green0\blue0;
+\red255\green255\blue0;\red255\green255\blue255;\red0\green0\blue128;
+\red0\green128\blue128;\red0\green128\blue0;
+\red128\green0\blue128;\red128\green0\blue0;\red128\green128\blue0;
+\red128\green128\blue128;\red192\green192\blue192;}
+{\stylesheet
+{\widctlpar \f4\fs24 \snext0 Normal;}{\s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 \sbasedon0\snext0 heading 1;}
+{\s2\sb240\sa60\keepn\widctlpar \b\i\f5 \sbasedon0\snext0 heading 2;}
+{\s3\sb240\sa60\keepn\widctlpar \f5 \sbasedon0\snext0 heading 3;}
+{\*\cs10 \additive Default Paragraph Font;}
+{\s15\widctlpar\brdrb\brdrs\brdrw15\brsp20 \tqc\tx4320\tqr\tx8640 \f4\fs24 
+\sbasedon0\snext15 header;}
+{\s16\fi-360\li360\widctlpar{\*\pn \pnlvl11\pnf1\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\f4\fs24 \sbasedon0\snext16 List Bullet;}
+{\s17\widctlpar \f11\fs24 \sbasedon0\snext17 Code;}
+{\s18\widctlpar\box\brdrsh\brdrs\brdrw15\brsp20 \f4\fs24 \sbasedon0\snext18 Figure;}
+{\s19\widctlpar\tqc\tx4320\tqr\tx8640 \f4\fs24 \sbasedon0\snext19 footer;}
+{\*\cs20 \additive\sbasedon10 page number;}}
+{\info{\title Linkers and loader chapter}
+{\author John R. Levine}
+{\operator John R. Levine}
+{\*\company I.E.C.C.}{\vern57431}}
+\widowctrl\ftnbj\aenddoc\formshade \fet0\sectd \linex0\endnhere 
+
+{\header \pard\plain \s15\widctlpar\brdrb\brdrs\brdrw15\brsp20 \tqc\tx4320\tqr\tx8640 \f4\fs24
+{\i Front Matter\tab \tab }{\field{\*\fldinst {\cs20  PAGE }}
+{\fldrslt {\cs20\lang1024 1}}}}
+\pard\plain \s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 Chapter XX: Front Matter
+\par\pard\plain
+{\i $Revision: 2.2 $} \line{\i $Date: 1999/06/09 00:48:48 $} {\fs24 
+\par }
+\pard\plain \s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 Dedication
+\par \pard\plain
+To Tonia and Sarah, my women folk.  {\fs24 
+\par }
+\pard\plain \s1\sb240\sa60\keepn\widctlpar \b\f5\fs28\kerning28 Introduction
+\par \pard\plain
+Linkers and loaders have been part of the software toolkit almost as long as there have been computers, since they are the critical tools that permit programs to be built from modules rather than as one big monolith. {\fs24 
+\par }
+\par\pard\plain
+As early as 1947, programmers started to use primitive loaders that could take program routines stored on separate tapes and combine and relocate them into one program. By the early 1960s, these loaders had evolved into full-fledged linkage editors. Since program memory remained expensive and limited and computers were (by modern standards) slow, these linkers contained complex features for creating complex memory overlay structures to cram large programs into small memory, and for re-editing previously linked programs to save the time needed to rebuild a program from scratch. {\fs24 
+\par }
+\par\pard\plain
+During the 1970s and 1980s there was little progress in linking technology. Linkers tended to become even simpler, as virtual memory moved much of the job of storage management away from applications and overlays, into the operating system, and as computers became faster and disks larger, it became easier to recreate a linked program from scratch to replace a few modules rather than to re-link just the changes. In the 1990s linkers have again become more complex, adding support for modern features including dynamically linked shared libraries and the unusual demands of C++. Radical new processor architectures with wide instruction words and compiler-scheduled memory accesses, such as the Intel IA64, will also put new demands on linkers to ensure that the complex requirements of the code are met in linked prograsm. {\fs24 
+\par }
+ \pard\plain \s2\sb240\sa60\keepn\widctlpar \b\i\f5 Who is this book for?
+\par \pard\plain
+This book is intended for several overlapping audiences. \par\pard\plain \s16\fi-360\li360\widctlpar
+{\*\pn \pnlvlblt\pnf1\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\f4\fs24
+{\i Students:} Courses in compiler construction and operating systems have generally given scant treatment to linking and loading, often because the linking process seemed trivial or obvious. Although this was arguably true when the languages of interest were Fortran, Pascal, and C, and operating systems didn't use memory mapping or shared libraries, it's much less true now. C++, Java, and other object-oriented languages require a much more sophisticated linking environment. Memory mapped executable program, shared libraries, and dynamic linking affect many parts of an operating system, and an operating system designer disregards linking issues at his or her peril. \par\pard\plain \s16\fi-360\li360\widctlpar
+{\*\pn \pnlvlblt\pnf1\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\f4\fs24
+{\i Practicing programmers} also need to be aware of what linkers do, again particularly for modern languages. C++ places unique demands on a linker, and large C++ programs are prone to develop hard-to-diagnose bugs due to unexpected things that happen at link time. (The best known are static constructors that run in an an order the programmer wasn't expecting.) Linker features such as shared libraries and dynamic linking offer great flexibility and power, when used appropriately,  \par\pard\plain \s16\fi-360\li360\widctlpar
+{\*\pn \pnlvlblt\pnf1\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\f4\fs24
+{\i Language designers and developers} need to be aware of what linkers do and can do as they build languages and compilers. Programming tasks had been handled hand for 30 years are automated in C++, depending on the linker to handle the details. (Consider what a programmer has to do to get the equivalent of C++ templates in C, or ensuring that the initialization routines in each of a hundred C source files are called before the body of the program starts.) Future languages will automate even more program-wide bookkeeping tasks, with more powerful linkers doing the work. Linkers will also be more involved in global program optimization, since the linker is the only stage of the compiler process that handles the entire program's code together and can do transformations that affect the entire program as a unit. {\fs24 
+\par }
+\par\pard\plain
+(The people who write linkers also all need this book, of course. But all the linker writers in the world could probably fit in one room and half of them already have copies because they reviewed the manuscript.) {\fs24 
+\par }
+ \pard\plain \s2\sb240\sa60\keepn\widctlpar \b\i\f5 Chapter summaries
+\par \pard\plain
+Chapter 1, {\i Linking and Loading}, provides a short historical overview of the linking process, and discusses the stages of the linking process. It ends with a short but complete example of a linker run, from input object files to runnable ``Hello, world'' program. {\fs24 
+\par }
+\par\pard\plain
+Chapter 2, {\i Architectural Issues}, reviews of computer architecture from the point of view of linker design. It examines the SPARC, a representative reduced instruction set architecture, the IBM 360/370, an old but still very viable register-memory architecture. and the Intel x86, which is in a category of its own. Important architectural aspects include memory architecture, program addressing architecture, and the layout of address fields in individual instructions. {\fs24 
+\par }
+\par\pard\plain
+Chapter 3, {\i Object Files}, examines the internal structure of object and executable files. It starts with the very simplest files, MS-DOS .COM files, and goes on to examine progressively more complex files including, DOS EXE, Windows COFF and PE (EXE and DLL), Unix a.out and ELF, and Intel/Microsoft OMF. {\fs24 
+\par }
+\par\pard\plain
+Chapter 4, {\i Storage allocation}, covers the first stage of linking, allocating storage to the segments of the linked program, with examples from real linkers. {\fs24 
+\par }
+\par\pard\plain
+Chapter 5, {\i Symbol management}, covers symbol binding and resolution, the process in which a symbolic reference in one file to a name in a second file is resolved to a machine address. {\fs24 
+\par }
+\par\pard\plain
+Chapter 6, {\i Libraries}, covers object code libraries, creation and use, with issues of library structure and performance. {\fs24 
+\par }
+\par\pard\plain
+Chapter 7, {\i Relocation}, covers address relocation, the process of adjusting the object code in a program to reflect the actual addresses at which it runs. It also covers position independent code (PIC), code created in a way that avoids the need for relocation, and the costs and benefits of doing so. {\fs24 
+\par }
+\par\pard\plain
+Chapter 8, {\i Loading and overlays}, covers the loading process, getting a program from a file into the computer's memory to run. It also covers tree-structured overlays, a venerable but still effective technique to conserve address space. {\fs24 
+\par }
+\par\pard\plain
+Chapter 9, {\i Shared libraries}, looks at what's required to share a single copy of a library's code among many different programs. This chapter concentrates on static linked shared libraries. {\fs24 
+\par }
+\par\pard\plain
+Chapter 10, {\i Dynamic Linking and Loading}, continues the discussion of Chapter 9 to dynamically linked shared libraries. It treats two examples in detail, Windows32 dynamic link libraries (DLLs), and Unix/Linux ELF shared libraries. {\fs24 
+\par }
+\par\pard\plain
+Chapter 11, {\i Advanced techniques}, looks at a variety of things that sophisticated modern linkers do. It covers new features that C++ requires, including ``name mangling'', global constructors and destructors, template expansion, and duplicate code elimination. Other techniques include incremental linking, link-time garbage collection, link time code generation and optimization, load time code generation, and profiling and instrumentation. It concludes with an overview of the Java linking model, which is considerably more semantically complex than any of the other linkers covered. {\fs24 
+\par }
+\par\pard\plain
+Chapter 12, {\i References}, is an annotated bibliography. {\fs24 
+\par }
+ \pard\plain \s2\sb240\sa60\keepn\widctlpar \b\i\f5 The project
+\par \pard\plain
+Chapters 3 through 11 have a continuing project to develop a small but functional linker in perl. Although perl is an unlikely implementation language for a production linker, it's an excellent choice for a term project. Perl handles many of the low-level programming chores that bog down programming in languages like C or C++, letting the student concentrate on the algorithms and data structures of the project at hand. Perl is available at no charge on most current computers, including Windows 95/98 and NT, Unix, and Linux, and many excellent books are available to teach perl to new users. (See the bibliography in Chapter 12 for some suggestions.) {\fs24 
+\par }
+\par\pard\plain
+The initial project in Chapter 3 builds a linker skeleton that can read and write files in a simple but complete object format, and subsequent chapters add functions to the linker until the final result is a full-fledged linker that supports shared libraries and produces dynamically linkable objects. {\fs24 
+\par }
+\par\pard\plain
+Perl is quite able to handle arbitrary binary files and data structures, and the project linker could if desired be adapted to handle native object formats. {\fs24 
+\par }
+ \pard\plain \s2\sb240\sa60\keepn\widctlpar \b\i\f5 Acknowledgements
+\par \pard\plain
+Many, many, people generously contributed their time to read and review the manuscript of this book, both the publisher's reviewers and the readers of the comp.compilers usenet newsgroup who read and commented on an on-line version of the manuscript. They include, in alphabetical order, Mike Albaugh, Rod Bates, Gunnar Blomberg, Robert Bowdidge, Keith Breinholt, Brad Brisco, Andreas Buschmann, David S. Cargo, John Carr, David Chase, Ben Combee, Ralph Corderoy, Paul Curtis, Lars Duening, Phil Edwards, Oisin Feeley, Mary Fernandez, Michael Lee Finney, Peter H. Froehlich, Robert Goldberg, James Grosbach, Rohit Grover, Quinn Tyler Jackson, Colin Jensen, Glenn Kasten, Louis Krupp, Terry Lambert, Doug Landauer, Jim Larus, Len Lattanzi, Greg Lindahl, Peter Ludemann, Steven D. Majewski, John McEnerney, Larry Meadows, Jason Merrill, Carl Montgomery, Cyril Muerillon, Sameer Nanajkar, Jacob Navia, Simon Peyton-Jones, Allan Porterfield, Charles Randall, Thomas David Rivers, Ken Rose, Alex Rosenberg, Raymond Roth, Timur Safin, Kenneth G Salter, Donn Seeley, Aaron F. Stanton, Harlan Stenn, Mark Stone, Robert Strandh, Bjorn De Sutter, Ian Taylor, Michael Trofimov, Hans Walheim, and Roger Wong. {\fs24 
+\par }
+\par\pard\plain
+These people are responsible for most of the true statements in the book. The false ones remain the author's responsiblity. (If you find any of the latter, please contact me at the address below so they can be fixed in subsequent printings.) {\fs24 
+\par }
+\par\pard\plain
+I particularly thank my editors at Morgan-Kaufmann Tim Cox and Sarah Luger, for putting up with my interminable delays during the writing process, and pulling all the pieces of this book together. {\fs24 
+\par }
+ \pard\plain \s2\sb240\sa60\keepn\widctlpar \b\i\f5 Contact us
+\par \pard\plain
+This book has a supporting web site at {\f11 http://linker.iecc.com}. It includes example chapters from the book, samples of perl code and object files for the project, and updates and errata. {\fs24 
+\par }
+\par\pard\plain
+You can send e-mail to the author at {\f11 linker@iecc.com}. The author reads all the mail, but because of the volume received may not be able to answer all questions promptly. }
